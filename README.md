@@ -2,6 +2,7 @@
 Tools for CocoaPods
 
 ## updatePodSpec.sh
+这个脚本用于自动提交自己工程目录下的spec文件到对应的repo去，避免我们维护两份spec文件，并且同步不及时的问题，您也可以将此脚本设置在本地的push hooks里面来执行。
 #### 将脚本拷贝到和你的仓库中spec文件同级目录下。
 #### 然后
 `
