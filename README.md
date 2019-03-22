@@ -1,12 +1,12 @@
 # ToolsForCocoaPods
 Tools for CocoaPods
 
-##updatePodSpec.sh
+## updatePodSpec.sh
 将脚本拷贝到和你的仓库中spec文件同级目录下。
 然后
-·
+`
 cd yourProjectPath
-·
+`
 然后
 `
 chmod +x ./updatePodSpec.sh 
@@ -25,6 +25,6 @@ PRIVATE_SPECS_REPO_URL=""
 其中PRIVATE_SPECS_REPO_URL必须配置，不然无法找到对应的spec仓库去提交spec文件的更新
 
 最后执行脚本
-·
+`
   ./updatePodSpec.sh
-·
+`
