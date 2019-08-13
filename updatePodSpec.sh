@@ -8,6 +8,8 @@
 POD_NAME=""
 #是否需要pod lib lint 校验spec文件
 NEED_CHECK=0
+#是否上传json的spec文件
+USE_JSON=1
 #私有specs的git仓库路径如果不设置 则选择和当前工程目录同级别
 SPECS_REPO_PATH=""
 #私有仓库的spec仓库URL
@@ -16,12 +18,20 @@ PRIVATE_SPECS_REPO_URL=""
 
 
 specFileExtention="podspec"
+basepath=$(cd `dirname $0`; pwd)
 
 function logError() {
 	echo -e "\033[0;31m$*\033[0m"
 }
 function logMsg() {
 	echo -e "\033[0;32m$*\033[0m"
+}
+function rmJsonIfNeeds() {
+	if [[ USE_JSON -eq 1 ]]; then
+		#statements
+		rm -rf "${basepath}/${POD_NAME}.${specFileExtention}.json"
+		logMsg '删除json文件!'
+	fi
 }
 if [[ "$PRIVATE_SPECS_REPO_URL" -eq "" ]]; then
 	#statements
@@ -50,7 +60,6 @@ if [[ "$POD_NAME" -eq "" ]]; then
 	done
 fi
 #获取当前路径
-basepath=$(cd `dirname $0`; pwd)
 if [[ "$SPECS_REPO_PATH" -eq "" ]]; then
 	#statements
 	logMsg "未设置SPECS_REPO_PATH，自动生成..."
@@ -82,15 +91,42 @@ do
 	if [[ $var -eq 1 && "$line" =~ "=" ]]; then
 		var=2
 	fi
-	if [[ "$line" =~ "s.version" ]]; then
+	if [[ "$line" =~ ".version" ]]; then
 		var=1
 	fi
+	# logMsg $line
 done
 if [[ "$?" -ne "0" ]]; then
 	#statements
 	logError '读取文件失败！'
 	exit 1
 fi
+# 如果version长度为0则说明获取version异常
+if [[ ${#version} -eq 0 ]]; then
+	#statements
+	logError '获取version失败！'
+	exit 1
+fi
+version=${version#'"'}
+version=${version%'"'}
+cmpFile=filename
+if [[ USE_JSON -eq 1 ]]; then
+	#statements
+	logMsg '使用json文件，开始生成...'
+	cmpFile="${filename}.json"
+	if [[ ! -d "${cmpFile}" ]]; then
+		#statements
+		rm -rf $cmpFile
+	fi
+	pod ipc spec $filename >> $cmpFile
+	if [[ "$?" -ne "0" ]]; then
+		#statements
+		logError '生成spec.json文件失败！'
+		exit 1
+	fi
+	logMsg '生成json文件成功!'
+fi
+# logMsg $version
 #退出一级目录并查找components
 
 path=$SPECS_REPO_PATH
@@ -102,6 +138,7 @@ if [[ ! -d "${path}" ]]; then
 	if [[ "$?" -ne "0" ]]; then
 		#statements
 		logError 'git clone 失败 请重试！'
+		rmJsonIfNeeds
 		exit 1
 	fi
 else
@@ -111,6 +148,7 @@ else
 	if [[ "$?" -ne "0"  ]]; then
 		#statements
 		logError 'git pull 失败 请手动处理仓库！'
+		rmJsonIfNeeds
 		exit 1
 	fi
 fi
@@ -131,9 +169,15 @@ if [[ ! -d "${path}" ]]; then
 else
 	#如果路径存在，比较文件差异
 	logMsg $path "路径存在 比较spec文件 ..."
-	diff "${path}/${POD_NAME}.$specFileExtention" $filename
+	fileExtention=$specFileExtention
+	if [[ USE_JSON -eq 1 ]]; then
+		#statements
+		fileExtention="${specFileExtention}.json"
+	fi
+	diff "${path}/${POD_NAME}.$fileExtention" $cmpFile
 	if [ "$?" -eq "0" ]; then
 	    logMsg "spec文件没有更新！脚本结束！"
+	    rmJsonIfNeeds
 	    exit 0
 	else
 
@@ -150,14 +194,16 @@ if [[ $NEED_CHECK -eq 1 ]]; then
 	if [[ "$?" -ne "0" ]]; then
 		#statements
 		logError "spec 文件校验未通过！"
+		rmJsonIfNeeds
 		exit 1
 	fi
 fi
 logMsg "拷贝spec文件 ..."
-cp "${basepath}/${POD_NAME}.$specFileExtention" "${path}/${POD_NAME}.$specFileExtention"
+cp "${basepath}/${POD_NAME}.$fileExtention" "${path}/${POD_NAME}.$fileExtention"
 if [[ "$?" -ne "0"  ]]; then
 		#statements
 		logError '拷贝文件时发生错误！请查看日志！'
+		rmJsonIfNeeds
 		exit 1
 fi
 cd $SPECS_REPO_PATH
@@ -167,12 +213,15 @@ git commit -m "[${event}] ${POD_NAME} (${version})"
 if [[ "$?" -ne "0"  ]]; then
 	#statements
 	logError 'git commit 失败 请手动处理仓库！'
+	rmJsonIfNeeds
 	exit 1
 fi
 git push
 if [[ "$?" -ne "0"  ]]; then
 		#statements
 		logError 'git push 失败 请手动处理仓库！'
+		rmJsonIfNeeds
 		exit 1
 fi
+rmJsonIfNeeds
 logMsg "上传成功！ spec文件更新完成！ 脚本结束！"

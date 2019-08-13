@@ -21,6 +21,10 @@ POD_NAME=""
 #### 是否需要`pod lib lint `校验spec文件
 `
 NEED_CHECK=0
+
+#### 是否上传json文件默认是1，直接上传podspec文件设成0
+
+USE_JSON=1
 `
 #### 私有specs的git仓库路径如果不设置 则选择和当前工程目录同级别
 `
