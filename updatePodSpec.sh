@@ -109,7 +109,7 @@ if [[ ${#version} -eq 0 ]]; then
 fi
 version=${version#'"'}
 version=${version%'"'}
-cmpFile=filename
+cmpFile=$filename
 if [[ USE_JSON -eq 1 ]]; then
 	#statements
 	logMsg '使用json文件，开始生成...'
