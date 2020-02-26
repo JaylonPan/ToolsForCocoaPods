@@ -142,7 +142,9 @@ if [[ ! -d "${path}" ]]; then
 		exit 1
 	fi
 else
-	logMsg "路径存在 pull ..."
+    logMsg "路径存在 git reset --hard ..."
+    git reset --hard
+	logMsg "git pull ..."
 	cd $path
 	git pull
 	if [[ "$?" -ne "0"  ]]; then
@@ -160,6 +162,11 @@ if [[ ! -d "${path}" ]]; then
 	mkdir -p "${path}"
 fi
 path="${path}/${version}"
+fileExtention=$specFileExtention
+if [[ USE_JSON -eq 1 ]]; then
+    #statements
+    fileExtention="${specFileExtention}.json"
+fi
 if [[ ! -d "${path}" ]]; then
 	#如果路径不存在，创建
 	#statements
@@ -169,15 +176,10 @@ if [[ ! -d "${path}" ]]; then
 else
 	#如果路径存在，比较文件差异
 	logMsg $path "路径存在 比较spec文件 ..."
-	fileExtention=$specFileExtention
-	if [[ USE_JSON -eq 1 ]]; then
-		#statements
-		fileExtention="${specFileExtention}.json"
-	fi
 	diff "${path}/${POD_NAME}.$fileExtention" $cmpFile
 	if [ "$?" -eq "0" ]; then
-	    logMsg "spec文件没有更新！脚本结束！"
-	    rmJsonIfNeeds
+        rmJsonIfNeeds
+        logMsg "spec文件没有更新！脚本结束！"
 	    exit 0
 	else
 
@@ -193,8 +195,8 @@ if [[ $NEED_CHECK -eq 1 ]]; then
 	pod lib lint --sources='$PRIVATE_SPECS_REPO_URL,https://github.com/CocoaPods/Specs.git,https://github.com/cocoapods/specs.git'
 	if [[ "$?" -ne "0" ]]; then
 		#statements
-		logError "spec 文件校验未通过！"
-		rmJsonIfNeeds
+        rmJsonIfNeeds
+        logError "spec 文件校验未通过！"
 		exit 1
 	fi
 fi
@@ -202,8 +204,8 @@ logMsg "拷贝spec文件 ..."
 cp "${basepath}/${POD_NAME}.$fileExtention" "${path}/${POD_NAME}.$fileExtention"
 if [[ "$?" -ne "0"  ]]; then
 		#statements
-		logError '拷贝文件时发生错误！请查看日志！'
-		rmJsonIfNeeds
+        rmJsonIfNeeds
+        logError '拷贝文件时发生错误！请查看日志！'
 		exit 1
 fi
 cd $SPECS_REPO_PATH
@@ -212,15 +214,15 @@ git add ./
 git commit -m "[${event}] ${POD_NAME} (${version})"
 if [[ "$?" -ne "0"  ]]; then
 	#statements
-	logError 'git commit 失败 请手动处理仓库！'
-	rmJsonIfNeeds
+    rmJsonIfNeeds
+    logError 'git commit 失败 请手动处理仓库！'
 	exit 1
 fi
 git push
 if [[ "$?" -ne "0"  ]]; then
 		#statements
-		logError 'git push 失败 请手动处理仓库！'
-		rmJsonIfNeeds
+        rmJsonIfNeeds
+        logError 'git push 失败 请手动处理仓库！'
 		exit 1
 fi
 rmJsonIfNeeds
